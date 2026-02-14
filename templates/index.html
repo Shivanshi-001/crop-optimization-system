@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Optimization Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Crop Optimization Dashboard</h1>
+        <p>Advanced Machine Learning &amp; Agronomic Rule Engine</p>
+    </header>
+
+    <div class="api-key-banner">
+        <div class="api-key-banner-label">
+            <span class="api-key-dot"></span>
+            WeatherAPI.com Key
+            <span class="api-key-optional">optional — enables live GPS weather (free at weatherapi.com)</span>
+        </div>
+        <div class="api-key-banner-row">
+            <input type="text"
+                   id="weather-api-key"
+                   class="api-key-banner-input"
+                   placeholder="Paste your WeatherAPI.com key here for live Temperature, Humidity & Rainfall via GPS"
+                   autocomplete="off"
+                   spellcheck="false">
+            <button type="button" id="gps-btn" class="gps-btn" onclick="getLocation()"
+                title="Auto-fills Temperature, Humidity and Rainfall using your GPS coordinates + WeatherAPI.com">
+                <span class="gps-icon"></span> Auto-fill via GPS
+            </button>
+            <span class="api-key-status" id="api-key-status"></span>
+        </div>
+    </div>
+
+    <div class="grid-layout">
+
+        <!-- ── NPK Section ──────────────────────────────────────────────── -->
+
+        <!-- NPK Accessibility toggle — spans full width -->
+        <div class="input-group npk-toggle-group" id="group-npk-toggle">
+            <label title="If you don't have access to soil lab testing, enable this to auto-fill estimated NPK values based on your soil type.">
+                Fertilizer Accessibility
+                <span class="range-hint">Optional</span>
+            </label>
+            <div class="toggle-row">
+                <label class="toggle-switch" title="Toggle on if you cannot afford soil lab testing">
+                    <input type="checkbox" id="npk-toggle" onchange="handleNpkToggle()">
+                    <span class="toggle-track">
+                        <span class="toggle-thumb"></span>
+                    </span>
+                </label>
+                <span class="toggle-label" id="npk-toggle-label">I have lab-tested NPK values</span>
+            </div>
+            <p class="toggle-hint" id="npk-hint" style="display:none;">
+                Estimated values based on typical <strong id="npk-soil-name">Loamy</strong> soil profiles.
+                Results may be less precise.
+            </p>
+        </div>
+
+        <!-- Nitrogen -->
+        <div class="input-group" id="group-N">
+            <label title="Nitrogen content in soil. Essential for leaf growth and photosynthesis. Critical for protein synthesis.">
+                Nitrogen (N)
+                <span class="range-hint">0–140 kg/ha</span>
+            </label>
+            <input type="number" id="N" placeholder="Enter kg/ha" min="0" max="140">
+            <div class="validation-message" id="error-N"></div>
+        </div>
+
+        <!-- Phosphorus -->
+        <div class="input-group" id="group-P">
+            <label title="Phosphorus content in soil. Critical for root development, flowering, and energy transfer in plants.">
+                Phosphorus (P)
+                <span class="range-hint">5–145 kg/ha</span>
+            </label>
+            <input type="number" id="P" placeholder="Enter kg/ha" min="5" max="145">
+            <div class="validation-message" id="error-P"></div>
+        </div>
+
+        <!-- Potassium -->
+        <div class="input-group" id="group-K">
+            <label title="Potassium content in soil. Essential for plant health, disease resistance, and fruit quality.">
+                Potassium (K)
+                <span class="range-hint">5–205 kg/ha</span>
+            </label>
+            <input type="number" id="K" placeholder="Enter kg/ha" min="5" max="205">
+            <div class="validation-message" id="error-K"></div>
+        </div>
+
+        <!-- ── Climate Section ─────────────────────────────────────────── -->
+
+        <!-- Temperature -->
+        <div class="input-group" id="group-temp">
+            <label title="Average air temperature in °C. Different crops have specific temperature requirements for optimal growth.">
+                Temperature
+                <span class="range-hint">10–45 °C</span>
+            </label>
+            <input type="number" id="temp" placeholder="Auto-filled by GPS or enter °C" min="10" max="45">
+            <div class="validation-message" id="error-temp"></div>
+        </div>
+
+        <!-- Humidity -->
+        <div class="input-group" id="group-hum">
+            <label title="Relative humidity as a percentage. Affects transpiration, disease development, and pollination success.">
+                Humidity
+                <span class="range-hint">15–100 %</span>
+            </label>
+            <input type="number" id="hum" placeholder="Enter %" min="15" max="100">
+            <div class="validation-message" id="error-hum"></div>
+        </div>
+
+        <!-- Soil pH -->
+        <div class="input-group" id="group-ph">
+            <label title="Soil pH scale 0–14. 7 is neutral, below 7 is acidic, above 7 is alkaline. Most crops prefer pH 6–7. Affects nutrient availability.">
+                Soil pH
+                <span class="range-hint">3.5–9.9</span>
+            </label>
+            <input type="number" id="ph" placeholder="e.g. 6.5" min="3.5" max="9.9" step="0.1">
+            <div class="validation-message" id="error-ph"></div>
+        </div>
+
+        <!-- Rainfall -->
+        <div class="input-group" id="group-rain">
+            <label title="Annual or seasonal rainfall in mm. 1 mm = 1 litre per m². Critical for crop water requirements and irrigation planning.">
+                Rainfall
+                <span class="range-hint">20–300 mm</span>
+            </label>
+            <input type="number" id="rain" placeholder="Enter mm" min="20" max="300">
+            <div class="validation-message" id="error-rain"></div>
+        </div>
+
+        <!-- Soil Type -->
+        <div class="input-group soil-section">
+            <label title="Physical texture of soil — determines water retention, drainage, and nutrient-holding capacity.">
+                Soil Type
+                <span class="range-hint">Required</span>
+            </label>
+            <select id="soil" onchange="handleNpkToggle()">
+                <option value="sandy">Sandy — Good drainage, low water retention</option>
+                <option value="loamy" selected>Loamy — Balanced, ideal for most crops</option>
+                <option value="clayey">Clayey — High water retention, poor drainage</option>
+                <option value="black">Black — Rich in nutrients, good moisture</option>
+                <option value="alluvial">Alluvial — Fertile, deposited by rivers</option>
+                <option value="red">Red — Good drainage, moderate fertility</option>
+            </select>
+        </div>
+
+        <!-- Model Selection -->
+        <div class="input-group model-section">
+            <label title="Choose which trained ML model runs the prediction. Each model has different accuracy and speed trade-offs. Best model is selected automatically during training based on F1-Score.">
+                Prediction Model
+                <span class="range-hint">Required</span>
+            </label>
+            <select id="model_choice">
+                <option value="Naive Bayes">Naive Bayes — Fast, probabilistic baseline</option>
+                <option value="Random Forest">Random Forest — Robust ensemble, handles noise</option>
+                <option value="XGBoost">XGBoost — Gradient boosting, high accuracy</option>
+                <option value="CatBoost">CatBoost — Best with categorical features</option>
+                <option value="SVM">SVM — Strong on high-dimensional data</option>
+            </select>
+        </div>
+
+        <button onclick="getPrediction()">Execute Prediction Model</button>
+
+    </div><!-- /.grid-layout -->
+
+    <!-- Results -->
+    <div id="summary-area">
+        <div class="panel">
+            <h3>Input Summary</h3>
+            <div id="input-review"></div>
+        </div>
+        <div class="panel result-panel">
+            <h3>Model Recommendation</h3>
+            <div id="final-result"></div>
+        </div>
+    </div>
+
+</div><!-- /.container -->
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

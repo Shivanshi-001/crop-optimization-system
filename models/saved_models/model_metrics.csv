@@ -1,0 +1,6 @@
+Model,Accuracy,Precision,F1_Score
+Naive Bayes,99.55,99.58,99.54
+Random Forest,99.32,99.37,99.32
+XGBoost,98.41,98.47,98.41
+CatBoost,98.18,98.42,98.19
+SVM,96.14,96.73,96.12
